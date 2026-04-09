@@ -312,7 +312,17 @@ if [ $BUBBLE_COUNT -gt 0 ] && [ $BUBBLE_COUNT -lt $ART_COUNT ]; then
     BUBBLE_START=$(( (ART_COUNT - BUBBLE_COUNT) / 2 ))
 fi
 
-# ─── Output: merged bubble box + art per line ────────────────────────────────
+# ─── Find the connector line (middle text line → points to buddy's mouth) ─────
+# The connector goes on the middle text row of the bubble
+CONNECTOR_BI=-1
+if [ $BUBBLE_COUNT -gt 2 ]; then
+    # text rows are indices 1..(BUBBLE_COUNT-2), pick the middle one
+    FIRST_TEXT=1
+    LAST_TEXT=$(( BUBBLE_COUNT - 2 ))
+    CONNECTOR_BI=$(( (FIRST_TEXT + LAST_TEXT) / 2 ))
+fi
+
+# ─── Output: merged bubble box + connector + art per line ─────────────────────
 for (( i=0; i<ART_COUNT; i++ )); do
     art_part="${ALL_COLORS[$i]}${ALL_LINES[$i]}${NC}"
 
@@ -321,20 +331,25 @@ for (( i=0; i<ART_COUNT; i++ )); do
         if [ $bi -ge 0 ] && [ $bi -lt $BUBBLE_COUNT ]; then
             bline="${BUBBLE_LINES[$bi]}"
             btype="${BUBBLE_TYPES[$bi]}"
-            if [ "$btype" = "border" ]; then
-                # Border lines: full rarity color
-                echo "${SPACER}${C}${bline}${NC}${GAP_STR}${art_part}"
+
+            # Connector: "-- " on the middle text line, spaces otherwise
+            if [ $bi -eq $CONNECTOR_BI ]; then
+                gap="${C}--${NC} "
             else
-                # Text lines: colored pipes, dim text
-                # Split: first char "|", then content, last char "|"
+                gap="   "
+            fi
+
+            if [ "$btype" = "border" ]; then
+                echo "${SPACER}${C}${bline}${NC}${gap}${art_part}"
+            else
                 pipe_l="${bline:0:1}"
                 pipe_r="${bline: -1}"
                 inner="${bline:1:$(( ${#bline} - 2 ))}"
-                echo "${SPACER}${C}${pipe_l}${NC}${DIM}${inner}${NC}${C}${pipe_r}${NC}${GAP_STR}${art_part}"
+                echo "${SPACER}${C}${pipe_l}${NC}${DIM}${inner}${NC}${C}${pipe_r}${NC}${gap}${art_part}"
             fi
         else
             empty=$(printf '%*s' "$BOX_W" '')
-            echo "${SPACER}${empty}${GAP_STR}${art_part}"
+            echo "${SPACER}${empty}   ${art_part}"
         fi
     else
         echo "${SPACER}${art_part}"
