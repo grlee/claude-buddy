@@ -18,6 +18,8 @@ import {
 import {
   loadCompanion, saveCompanion, resolveUserId,
   loadReaction, saveReaction, writeStatusState,
+  loadActiveSlot, saveActiveSlot, slugify,
+  loadCompanionSlot, saveCompanionSlot, deleteCompanionSlot, listCompanionSlots,
 } from "./state.ts";
 import {
   getReaction, generateFallbackName, generatePersonalityPrompt,
@@ -215,6 +217,139 @@ server.tool(
     writeStatusState(companion, "*stretches* I'm back!", false);
     saveReaction("*stretches* I'm back!", "pet");
     return { content: [{ type: "text", text: `${companion.name} is back!` }] };
+  },
+);
+
+// ─── Tool: buddy_summon ─────────────────────────────────────────────────────
+
+server.tool(
+  "buddy_summon",
+  "Summon a buddy by slot name. Loads a saved buddy if the slot exists; generates a new deterministic buddy for unknown slot names. Omit slot to pick randomly from all saved buddies. Your current buddy is NOT destroyed — they stay saved in their slot.",
+  {
+    slot: z.string().min(1).max(14).optional().describe(
+      "Slot name to summon (e.g. 'fafnir', 'dragon-2'). Omit to pick a random saved buddy.",
+    ),
+  },
+  async ({ slot }) => {
+    const userId = resolveUserId();
+
+    let targetSlot: string;
+
+    if (!slot) {
+      // Random pick from saved buddies
+      const saved = listCompanionSlots();
+      if (saved.length === 0) {
+        return {
+          content: [{ type: "text", text: "No saved buddies yet. Use buddy_summon with a slot name to create one." }],
+        };
+      }
+      targetSlot = saved[Math.floor(Math.random() * saved.length)].slot;
+    } else {
+      targetSlot = slugify(slot);
+    }
+
+    // Load existing or generate new
+    let companion = loadCompanionSlot(targetSlot);
+    if (!companion) {
+      const bones = generateBones(userId, targetSlot);
+      companion = {
+        bones,
+        name: generateFallbackName(),
+        personality: `A ${bones.rarity} ${bones.species} who watches code with quiet intensity.`,
+        hatchedAt: Date.now(),
+        userId,
+      };
+      saveCompanionSlot(companion, targetSlot);
+    }
+
+    saveActiveSlot(targetSlot);
+    writeStatusState(companion, `*${companion.name} arrives*`);
+
+    const card = renderCompanionCard(
+      companion.bones,
+      companion.name,
+      companion.personality,
+      `*${companion.name} arrives*`,
+    );
+    return { content: [{ type: "text", text: card }] };
+  },
+);
+
+// ─── Tool: buddy_save ───────────────────────────────────────────────────────
+
+server.tool(
+  "buddy_save",
+  "Save the current buddy to a named slot. Useful for bookmarking before trying a new buddy.",
+  {
+    slot: z.string().min(1).max(14).optional().describe(
+      "Slot name (defaults to the buddy's current name, slugified). Overwrites existing slot with same name.",
+    ),
+  },
+  async ({ slot }) => {
+    const companion = ensureCompanion();
+    const targetSlot = slot ? slugify(slot) : slugify(companion.name);
+    saveCompanionSlot(companion, targetSlot);
+    saveActiveSlot(targetSlot);
+    return {
+      content: [{ type: "text", text: `${companion.name} saved to slot "${targetSlot}".` }],
+    };
+  },
+);
+
+// ─── Tool: buddy_list ───────────────────────────────────────────────────────
+
+server.tool(
+  "buddy_list",
+  "List all saved buddies with their slot names, species, and rarity",
+  {},
+  async () => {
+    const saved = listCompanionSlots();
+    const activeSlot = loadActiveSlot();
+
+    if (saved.length === 0) {
+      return { content: [{ type: "text", text: "No saved buddies yet." }] };
+    }
+
+    const lines = saved.map(({ slot, companion }) => {
+      const active = slot === activeSlot ? " ← active" : "";
+      const stars = RARITY_STARS[companion.bones.rarity];
+      const shiny = companion.bones.shiny ? " ✨" : "";
+      return `  ${companion.name} [${slot}] — ${companion.bones.rarity} ${companion.bones.species} ${stars}${shiny}${active}`;
+    });
+
+    return { content: [{ type: "text", text: lines.join("\n") }] };
+  },
+);
+
+// ─── Tool: buddy_dismiss ────────────────────────────────────────────────────
+
+server.tool(
+  "buddy_dismiss",
+  "Remove a saved buddy by slot name. Cannot dismiss the currently active buddy — switch first with buddy_summon.",
+  {
+    slot: z.string().min(1).max(14).describe("Slot name to remove"),
+  },
+  async ({ slot }) => {
+    const targetSlot = slugify(slot);
+    const activeSlot = loadActiveSlot();
+
+    if (targetSlot === activeSlot) {
+      return {
+        content: [{ type: "text", text: `Cannot dismiss the active buddy. Use buddy_summon to switch first, then buddy_dismiss "${targetSlot}".` }],
+      };
+    }
+
+    const companion = loadCompanionSlot(targetSlot);
+    if (!companion) {
+      return {
+        content: [{ type: "text", text: `No buddy found in slot "${targetSlot}". Use buddy_list to see saved buddies.` }],
+      };
+    }
+
+    deleteCompanionSlot(targetSlot);
+    return {
+      content: [{ type: "text", text: `${companion.name} [${targetSlot}] dismissed.` }],
+    };
   },
 );
 

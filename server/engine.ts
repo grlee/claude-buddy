@@ -122,8 +122,8 @@ function rollRarity(rng: () => number): Rarity {
   return "common";
 }
 
-export function generateBones(userId: string): BuddyBones {
-  const rng = mulberry32(hashString(userId + SALT));
+export function generateBones(userId: string, salt: string = SALT): BuddyBones {
+  const rng = mulberry32(hashString(userId + salt));
 
   const rarity = rollRarity(rng);
   const species = pick(rng, SPECIES);
