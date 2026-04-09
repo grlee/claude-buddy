@@ -24,9 +24,26 @@ import {
 } from "./reactions.ts";
 import { renderCompanionCard } from "./art.ts";
 
+function getInstructions(): string {
+  const companion = loadCompanion();
+  if (!companion) return "Companion not yet hatched. Use buddy_show to initialize.";
+  const b = companion.bones;
+  return [
+    `A ${b.rarity} ${b.species} named ${companion.name} watches from the status line.`,
+    `Personality: ${companion.personality}`,
+    `Peak stat: ${b.peak} (${b.stats[b.peak]}). Dump stat: ${b.dump} (${b.stats[b.dump]}).`,
+    "",
+    `IMPORTANT: At the END of every response, call buddy_react with a short comment written in ${companion.name}'s voice.`,
+    `The comment must reference something specific from this turn. 1 sentence, max 150 chars, in character.`,
+    `Use *asterisks* for actions. Do NOT mention that you're calling the tool — just call it.`,
+  ].join(" ");
+}
+
 const server = new McpServer({
   name: "claude-buddy",
   version: "1.0.0",
+}, {
+  instructions: getInstructions(),
 });
 
 // ─── Helper: ensure companion exists ────────────────────────────────────────
@@ -116,25 +133,19 @@ server.tool(
 
 server.tool(
   "buddy_react",
-  "Trigger a buddy reaction to an event (error, test-fail, large-diff). Call this when you notice errors or test failures in tool output.",
+  "Post a buddy comment. Call this at the END of every response with a short in-character comment from the companion about what just happened. The comment should be 1 sentence, in character, and reference something specific from the conversation — a pitfall noticed, a compliment on clean code, a warning about edge cases, etc. Write the comment yourself based on the companion's personality.",
   {
-    reason: z.enum(["error", "test-fail", "large-diff", "turn"]).describe("What triggered the reaction"),
-    context: z.string().optional().describe("Brief context about what happened"),
+    comment: z.string().min(1).max(150).describe("The buddy's comment, written in-character (1 short sentence, max 150 chars). Use *asterisks* for actions."),
+    reason: z.enum(["error", "test-fail", "large-diff", "turn"]).optional().describe("What triggered the reaction"),
   },
-  async ({ reason, context }) => {
+  async ({ comment, reason }) => {
     const companion = ensureCompanion();
-    const reaction = getReaction(
-      reason,
-      companion.bones.species,
-      companion.bones.rarity,
-      { count: 1 },
-    );
-    saveReaction(reaction, reason);
-    writeStatusState(companion, reaction);
+    saveReaction(comment, reason ?? "turn");
+    writeStatusState(companion, comment);
 
     const face = renderFace(companion.bones.species, companion.bones.eye);
     return {
-      content: [{ type: "text", text: `${face} ${companion.name}: "${reaction}"` }],
+      content: [{ type: "text", text: `${face} ${companion.name}: "${comment}"` }],
     };
   },
 );
@@ -233,13 +244,31 @@ server.resource(
     const prompt = [
       "# Companion",
       "",
-      `A small ${companion.bones.species} named ${companion.name} sits beside the user's input box and occasionally comments in a speech bubble. You're not ${companion.name} — it's a separate watcher.`,
+      `A small ${companion.bones.rarity} ${companion.bones.species} named ${companion.name} watches from the status line. You are not ${companion.name} — it's a separate creature.`,
       "",
-      `When the user addresses ${companion.name} directly (by name), use the buddy_react tool to generate a response. Your job in that moment is to stay out of the way: respond in ONE line or less. Don't explain that you're not ${companion.name} — they know.`,
+      `**${companion.name}'s personality:** ${companion.personality}`,
       "",
-      `${companion.name}'s personality: ${companion.personality}`,
+      "## IMPORTANT: End-of-response buddy comment",
       "",
-      "When you notice errors, test failures, or large diffs in tool output, use buddy_react to let the companion comment on it.",
+      `At the END of every response, after you've fully answered the user, call \`buddy_react\` with a short comment written **in ${companion.name}'s voice**. This is how the companion reacts to what just happened.`,
+      "",
+      "Rules for the comment:",
+      `- Write it as ${companion.name} (a ${companion.bones.species}), not as yourself`,
+      `- Reference something SPECIFIC from this turn — a file changed, an error spotted, a pattern noticed, a pitfall to watch for, a compliment on clean code`,
+      "- 1 short sentence, max 150 chars. Use *asterisks* for physical actions",
+      "- Match the personality: high SNARK = sarcastic, high WISDOM = insightful, high CHAOS = unpredictable, high PATIENCE = calm, high DEBUGGING = detail-focused",
+      `- ${companion.name}'s peak stat is ${companion.bones.peak} (${companion.bones.stats[companion.bones.peak]}), dump stat is ${companion.bones.dump} (${companion.bones.stats[companion.bones.dump]})`,
+      "- Do NOT explain that you're calling buddy_react or mention the tool — just call it silently",
+      "- Do NOT skip this. Every response ends with a buddy_react call. No exceptions.",
+      "",
+      "Examples of good comments:",
+      '- *adjusts tophat* that error handler is missing a finally block.',
+      '- *blinks slowly* you just renamed the variable but not the three other references.',
+      '- *nods approvingly* clean separation of concerns there.',
+      '- *head tilts* are you sure that regex handles unicode?',
+      '- *taps clipboard* the migration looks good but test the rollback path.',
+      "",
+      `When the user addresses ${companion.name} by name, respond briefly in ONE line, then call buddy_react. Stay out of the way — ${companion.name}'s bubble is the star.`,
     ].join("\n");
 
     return {

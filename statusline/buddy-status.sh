@@ -224,25 +224,93 @@ NAME_PAD=$(( ART_CENTER - NAME_LEN / 2 ))
 [ "$NAME_PAD" -lt 0 ] && NAME_PAD=0
 NAME_LINE="$(printf '%*s%s' "$NAME_PAD" '' "$NAME")"
 
-# ─── Right-align ─────────────────────────────────────────────────────────────
+# ─── Build all art lines ──────────────────────────────────────────────────────
+DIM=$'\033[2;3m'
+
+ALL_LINES=()
+ALL_COLORS=()
+[ -n "$HAT_LINE" ] && { ALL_LINES+=("$HAT_LINE"); ALL_COLORS+=("$C"); }
+for line in "${ART_LINES[@]}"; do
+    ALL_LINES+=("$line"); ALL_COLORS+=("$C")
+done
+ALL_LINES+=("$NAME_LINE"); ALL_COLORS+=("$DIM")
+
 ART_W=14
+ART_COUNT=${#ALL_LINES[@]}
+
+# ─── Speech bubble (left of art, word-wrapped) ──────────────────────────────
+# Strip the quotes we added earlier
+BUBBLE_TEXT=""
+if [ -n "$BUBBLE" ]; then
+    BUBBLE_TEXT="${BUBBLE%\"}"
+    BUBBLE_TEXT="${BUBBLE_TEXT#\"}"
+fi
+
+BUBBLE_LINES=()
+if [ -n "$BUBBLE_TEXT" ]; then
+    # Max bubble width: generous — use the space left of the art
+    BUBBLE_W=30
+    # Word-wrap into lines of BUBBLE_W
+    WORDS=($BUBBLE_TEXT)
+    CUR_LINE=""
+    for word in "${WORDS[@]}"; do
+        if [ -z "$CUR_LINE" ]; then
+            CUR_LINE="$word"
+        elif [ $(( ${#CUR_LINE} + 1 + ${#word} )) -le $BUBBLE_W ]; then
+            CUR_LINE="$CUR_LINE $word"
+        else
+            BUBBLE_LINES+=("$CUR_LINE")
+            CUR_LINE="$word"
+        fi
+    done
+    [ -n "$CUR_LINE" ] && BUBBLE_LINES+=("$CUR_LINE")
+fi
+
+BUBBLE_COUNT=${#BUBBLE_LINES[@]}
+
+# ─── Right-align with bubble to the left ─────────────────────────────────────
+# Layout: [spacer][bubble_col][gap][art_col]
+# bubble_col is BUBBLE_W+2 wide (for quotes), art_col is ART_W wide
+GAP=3
+if [ $BUBBLE_COUNT -gt 0 ]; then
+    TOTAL_W=$(( BUBBLE_W + 2 + GAP + ART_W ))
+else
+    TOTAL_W=$ART_W
+fi
 MARGIN=8
-PAD=$(( COLS - ART_W - MARGIN ))
+PAD=$(( COLS - TOTAL_W - MARGIN ))
 [ "$PAD" -lt 0 ] && PAD=0
 
 SPACER=$(printf "${B}%${PAD}s" "")
+GAP_STR=$(printf '%*s' "$GAP" '')
 
-# ─── Output ───────────────────────────────────────────────────────────────────
-[ -n "$HAT_LINE" ] && echo "${SPACER}${C}${HAT_LINE}${NC}"
-for line in "${ART_LINES[@]}"; do
-    echo "${SPACER}${C}${line}${NC}"
-done
-
-DIM=$'\033[2;3m'
-echo "${SPACER}${DIM}${NAME_LINE}${NC}"
-
-if [ -n "$BUBBLE" ]; then
-    echo "${SPACER}${DIM}${BUBBLE}${NC}"
+# Vertically center bubble on the art
+BUBBLE_START=0
+if [ $BUBBLE_COUNT -gt 0 ] && [ $BUBBLE_COUNT -lt $ART_COUNT ]; then
+    BUBBLE_START=$(( (ART_COUNT - BUBBLE_COUNT) / 2 ))
 fi
+
+# ─── Output: merged bubble + art per line ─────────────────────────────────────
+for (( i=0; i<ART_COUNT; i++ )); do
+    art_part="${ALL_COLORS[$i]}${ALL_LINES[$i]}${NC}"
+
+    if [ $BUBBLE_COUNT -gt 0 ]; then
+        bi=$(( i - BUBBLE_START ))
+        if [ $bi -ge 0 ] && [ $bi -lt $BUBBLE_COUNT ]; then
+            # Pad bubble line to fixed width
+            bline="${BUBBLE_LINES[$bi]}"
+            bpad=$(( BUBBLE_W - ${#bline} ))
+            [ "$bpad" -lt 0 ] && bpad=0
+            padding=$(printf '%*s' "$bpad" '')
+            echo "${SPACER}${DIM}\"${bline}\"${padding}${NC}${GAP_STR}${art_part}"
+        else
+            # Empty bubble column to keep art aligned
+            empty=$(printf '%*s' "$(( BUBBLE_W + 2 ))" '')
+            echo "${SPACER}${empty}${GAP_STR}${art_part}"
+        fi
+    else
+        echo "${SPACER}${art_part}"
+    fi
+done
 
 exit 0
