@@ -13,7 +13,8 @@
     "show": "bun run cli/show.ts",
     "doctor": "bun run cli/doctor.ts",
     "test-statusline": "bun run cli/test-statusline.ts",
-    "backup": "bun run cli/backup.ts"
+    "backup": "bun run cli/backup.ts",
+    "disable": "bun run cli/disable.ts"
   },
   "files": [
     "server/",

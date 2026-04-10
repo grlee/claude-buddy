@@ -39,6 +39,9 @@ switch (command) {
   case "backup":
     await import("./backup.ts");
     break;
+  case "disable":
+    await import("./disable.ts");
+    break;
   case "--help":
   case "-h":
     console.log(`
@@ -52,6 +55,7 @@ Commands:
   doctor            Run diagnostic report (paste output in bug reports)
   test-statusline   Install temporary diagnostic status line in Claude Code
   backup            Snapshot or restore all claude-buddy state
+  disable           Temporarily deactivate buddy (re-enable with install-buddy)
   uninstall         Remove all claude-buddy integrations
 
 Options:
