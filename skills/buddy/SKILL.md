@@ -1,7 +1,7 @@
 ---
 name: buddy
 description: "Show, pet, or manage your coding companion. Use when the user types /buddy or mentions their companion by name."
-argument-hint: "[show|pet|off|on|stats|rename <name>|personality <text>|frequency [seconds]|style [classic|round]|position [top|left]|rarity [on|off]]"
+argument-hint: "[show|pet|off|on|stats|help|rename <name>|personality <text>|frequency [seconds]|style [classic|round]|position [top|left]|rarity [on|off]]"
 allowed-tools: mcp__claude_buddy__*
 ---
 
@@ -16,6 +16,7 @@ Based on `$ARGUMENTS`:
 | Input | Action |
 |-------|--------|
 | *(empty)* or `show` | Call `buddy_show` |
+| `help` | Call `buddy_help` |
 | `pet` | Call `buddy_pet` |
 | `stats` | Call `buddy_stats` |
 | `off` | Call `buddy_mute` |

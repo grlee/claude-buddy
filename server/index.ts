@@ -194,6 +194,44 @@ server.tool(
   },
 );
 
+// ─── Tool: buddy_help ────────────────────────────────────────────────────────
+
+server.tool(
+  "buddy_help",
+  "Show all available /buddy commands",
+  {},
+  async () => {
+    const help = [
+      "claude-buddy commands",
+      "",
+      "In Claude Code:",
+      "  /buddy            Show companion card with ASCII art + stats",
+      "  /buddy help       Show this help",
+      "  /buddy pet        Pet your companion",
+      "  /buddy stats      Detailed stat card",
+      "  /buddy off        Mute reactions",
+      "  /buddy on         Unmute reactions",
+      "  /buddy rename     Rename companion (1-14 chars)",
+      "  /buddy personality  Set custom personality text",
+      "  /buddy frequency  Show or set comment cooldown (tmux only)",
+      "  /buddy style      Show or set bubble style (tmux only)",
+      "  /buddy position   Show or set bubble position (tmux only)",
+      "  /buddy rarity     Show or hide rarity stars (tmux only)",
+      "",
+      "CLI:",
+      "  bun run help            Show full CLI help",
+      "  bun run show            Display buddy in terminal",
+      "  bun run hunt            Search for specific buddy",
+      "  bun run doctor          Diagnostic report",
+      "  bun run disable         Temporarily deactivate buddy",
+      "  bun run enable          Re-enable buddy",
+      "  bun run backup          Snapshot/restore state",
+    ].join("\n");
+
+    return { content: [{ type: "text", text: help }] };
+  },
+);
+
 // ─── Tool: buddy_frequency / buddy_style ─────────────────────────────────────
 
 server.tool(

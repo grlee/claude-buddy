@@ -58,6 +58,14 @@ bun run install-buddy
 
 Fully automated. No manual config. Backup is optional but recommended — restore anytime with `bun run backup restore`.
 
+**Optional:** Make `claude-buddy` available as a global command:
+
+```bash
+bun link
+```
+
+Then you can use `claude-buddy <command>` from anywhere instead of `bun run <command>`. Try `claude-buddy help` for all available commands.
+
 ### What the installer does
 
 | Step | Target file | What it configures |
