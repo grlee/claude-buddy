@@ -17,15 +17,20 @@
  */
 
 import {
-  readFileSync, writeFileSync, mkdirSync, existsSync, readdirSync, renameSync,
+  readFileSync,
+  writeFileSync,
+  mkdirSync,
+  existsSync,
+  readdirSync,
+  renameSync,
 } from "fs";
 import { join } from "path";
 import { homedir } from "os";
 import type { Companion } from "./engine.ts";
 
-const STATE_DIR      = join(homedir(), ".claude-buddy");
-const MANIFEST_FILE  = join(STATE_DIR, "menagerie.json");
-const CONFIG_FILE    = join(STATE_DIR, "config.json");
+const STATE_DIR = join(homedir(), ".claude-buddy");
+const MANIFEST_FILE = join(STATE_DIR, "menagerie.json");
+const CONFIG_FILE = join(STATE_DIR, "config.json");
 
 // ─── Session ID (PR #6: tmux session isolation) ─────────────────────────────
 
@@ -67,19 +72,21 @@ function saveManifest(m: Manifest): void {
   mkdirSync(STATE_DIR, { recursive: true });
   const tmp = MANIFEST_FILE + ".tmp";
   writeFileSync(tmp, JSON.stringify(m, null, 2));
-  renameSync(tmp, MANIFEST_FILE);  // atomic on same filesystem
+  renameSync(tmp, MANIFEST_FILE); // atomic on same filesystem
 }
 
 // ─── Slot helpers ────────────────────────────────────────────────────────────
 
 /** Normalise a string to a safe slot key (a-z0-9-, max 14 chars). */
 export function slugify(name: string): string {
-  return name
-    .toLowerCase()
-    .replace(/[^a-z0-9-]/g, "-")
-    .replace(/-+/g, "-")
-    .replace(/^-|-$/g, "")
-    .slice(0, 14) || "buddy";
+  return (
+    name
+      .toLowerCase()
+      .replace(/[^a-z0-9-]/g, "-")
+      .replace(/-+/g, "-")
+      .replace(/^-|-$/g, "")
+      .slice(0, 14) || "buddy"
+  );
 }
 
 /**
@@ -147,9 +154,13 @@ export function deleteCompanionSlot(slot: string): void {
   saveManifest(m);
 }
 
-export function listCompanionSlots(): Array<{ slot: string; companion: Companion }> {
+export function listCompanionSlots(): Array<{
+  slot: string;
+  companion: Companion;
+}> {
   return Object.entries(loadManifest().companions).map(([slot, companion]) => ({
-    slot, companion,
+    slot,
+    companion,
   }));
 }
 
@@ -183,15 +194,21 @@ function migrateIfNeeded(): void {
   const menagerieDir = join(STATE_DIR, "menagerie");
   if (existsSync(menagerieDir)) {
     try {
-      for (const f of readdirSync(menagerieDir).filter((f) => f.endsWith(".json"))) {
+      for (const f of readdirSync(menagerieDir).filter((f) =>
+        f.endsWith(".json"),
+      )) {
         const slot = f.slice(0, -5);
         try {
           companions[slot] = JSON.parse(
             readFileSync(join(menagerieDir, f), "utf8"),
           );
-        } catch { /* skip malformed */ }
+        } catch {
+          /* skip malformed */
+        }
       }
-    } catch { /* noop */ }
+    } catch {
+      /* noop */
+    }
   }
 
   // Absorb legacy companion.json
@@ -202,7 +219,9 @@ function migrateIfNeeded(): void {
       const slot = slugify(c.name);
       companions[slot] = c;
       active = slot;
-    } catch { /* noop */ }
+    } catch {
+      /* noop */
+    }
   }
 
   // Read active pointer if it exists
@@ -211,7 +230,9 @@ function migrateIfNeeded(): void {
     try {
       const a = readFileSync(activeFile, "utf8").trim();
       if (a && companions[a]) active = a;
-    } catch { /* noop */ }
+    } catch {
+      /* noop */
+    }
   }
 
   if (Object.keys(companions).length > 0) {
@@ -231,7 +252,9 @@ export interface ReactionState {
 
 export function loadReaction(): ReactionState | null {
   try {
-    const data: ReactionState = JSON.parse(readFileSync(reactionFile(), "utf8"));
+    const data: ReactionState = JSON.parse(
+      readFileSync(reactionFile(), "utf8"),
+    );
     // Reactions expire after 20 seconds (matches shell display TTL)
     if (Date.now() - data.timestamp > 20_000) return null;
     return data;
@@ -266,6 +289,7 @@ export interface BuddyConfig {
   bubbleStyle: "classic" | "round";
   bubblePosition: "top" | "left";
   showRarity: boolean;
+  statusLineEnabled: boolean;
 }
 
 const DEFAULT_CONFIG: BuddyConfig = {
@@ -273,6 +297,7 @@ const DEFAULT_CONFIG: BuddyConfig = {
   bubbleStyle: "classic",
   bubblePosition: "top",
   showRarity: true,
+  statusLineEnabled: false,
 };
 
 export function loadConfig(): BuddyConfig {
@@ -308,22 +333,24 @@ export interface StatusState {
 }
 
 export function writeStatusState(
-  companion: Companion, reaction?: string, muted?: boolean,
+  companion: Companion,
+  reaction?: string,
+  muted?: boolean,
 ): void {
   mkdirSync(STATE_DIR, { recursive: true });
   const { renderFace, RARITY_STARS } =
     require("./engine.ts") as typeof import("./engine.ts");
   const state: StatusState = {
-    name:     companion.name,
-    species:  companion.bones.species,
-    rarity:   companion.bones.rarity,
-    stars:    RARITY_STARS[companion.bones.rarity],
-    face:     renderFace(companion.bones.species, companion.bones.eye),
-    eye:      companion.bones.eye,
-    shiny:    companion.bones.shiny,
-    hat:      companion.bones.hat,
+    name: companion.name,
+    species: companion.bones.species,
+    rarity: companion.bones.rarity,
+    stars: RARITY_STARS[companion.bones.rarity],
+    face: renderFace(companion.bones.species, companion.bones.eye),
+    eye: companion.bones.eye,
+    shiny: companion.bones.shiny,
+    hat: companion.bones.hat,
     reaction: reaction ?? "",
-    muted:    muted ?? false,
+    muted: muted ?? false,
   };
   writeFileSync(join(STATE_DIR, "status.json"), JSON.stringify(state));
 }

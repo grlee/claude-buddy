@@ -1,5 +1,15 @@
 {
     "hooks": {
+        "SessionStart": [
+            {
+                "hooks": [
+                    {
+                        "type": "command",
+                        "command": "./hooks/statusline-setup.sh"
+                    }
+                ]
+            }
+        ],
         "PostToolUse": [
             {
                 "matcher": "Bash",
