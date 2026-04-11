@@ -16,7 +16,6 @@
         "terminal-pet",
         "tamagotchi"
     ],
-    "hooks": "./hooks/hooks.json",
     "mcpServers": {
         "claude-buddy": {
             "type": "stdio",
