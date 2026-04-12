@@ -426,7 +426,7 @@ server.tool("buddy_unmute", "Unmute buddy reactions", {}, async () => {
 
 server.tool(
   "buddy_statusline",
-  "Enable or disable the buddy status line. When enabled, a SessionStart hook configures Claude Code's status line to show your buddy with animation and reactions. When disabled, the status line is released for other use. Returns current status if called without arguments.",
+  "Enable or disable the buddy status line. When enabled, configures Claude Code's status line to show your buddy with animation and reactions. When disabled, the status line is released for other use. Returns current status if called without arguments.",
   {
     enabled: z
       .boolean()
@@ -453,7 +453,7 @@ server.tool(
     if (enabled) {
       // Immediately patch settings.json so the user doesn't need to restart twice
       try {
-        const { readFileSync, writeFileSync } = await import("fs");
+        const { readFileSync, writeFileSync, renameSync } = await import("fs");
         const { join, resolve, dirname } = await import("path");
         const { homedir } = await import("os");
 
@@ -468,9 +468,11 @@ server.tool(
           padding: 1,
           refreshInterval: 1,
         };
-        writeFileSync(settingsPath, JSON.stringify(settings, null, 2) + "\n");
+        const tmp = settingsPath + ".tmp";
+        writeFileSync(tmp, JSON.stringify(settings, null, 2) + "\n");
+        renameSync(tmp, settingsPath);
       } catch {
-        /* SessionStart hook will handle it on next restart */
+        /* user must restart Claude Code once for the status line to appear */
       }
 
       return {
@@ -484,7 +486,7 @@ server.tool(
     } else {
       // Remove buddy status line from settings.json
       try {
-        const { readFileSync, writeFileSync } = await import("fs");
+        const { readFileSync, writeFileSync, renameSync } = await import("fs");
         const { join } = await import("path");
         const { homedir } = await import("os");
 
@@ -492,7 +494,9 @@ server.tool(
         const settings = JSON.parse(readFileSync(settingsPath, "utf8"));
         if (settings.statusLine?.command?.includes("buddy-status.sh")) {
           delete settings.statusLine;
-          writeFileSync(settingsPath, JSON.stringify(settings, null, 2) + "\n");
+          const tmp = settingsPath + ".tmp";
+          writeFileSync(tmp, JSON.stringify(settings, null, 2) + "\n");
+          renameSync(tmp, settingsPath);
         }
       } catch {
         /* best effort */
