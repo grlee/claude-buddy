@@ -5,7 +5,7 @@
                 "hooks": [
                     {
                         "type": "command",
-                        "command": "./hooks/statusline-setup.sh"
+                        "command": "./hooks/claude-buddy/statusline-setup.sh"
                     }
                 ]
             }
@@ -16,7 +16,7 @@
                 "hooks": [
                     {
                         "type": "command",
-                        "command": "./hooks/react.sh"
+                        "command": "./hooks/claude-buddy/react.sh"
                     }
                 ]
             }
@@ -26,7 +26,7 @@
                 "hooks": [
                     {
                         "type": "command",
-                        "command": "./hooks/buddy-comment.sh"
+                        "command": "./hooks/claude-buddy/buddy-comment.sh"
                     }
                 ]
             }
@@ -36,7 +36,7 @@
                 "hooks": [
                     {
                         "type": "command",
-                        "command": "./hooks/name-react.sh"
+                        "command": "./hooks/claude-buddy/name-react.sh"
                     }
                 ]
             }

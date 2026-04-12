@@ -196,9 +196,9 @@ function installPopupHooks(settings: Record<string, any>) {
 // ─── Step 4: Register hooks ─────────────────────────────────────────────────
 
 function installHooks(settings: Record<string, any>) {
-  const reactHook    = join(PROJECT_ROOT, "hooks", "react.sh");
-  const commentHook  = join(PROJECT_ROOT, "hooks", "buddy-comment.sh");
-  const nameHook     = join(PROJECT_ROOT, "hooks", "name-react.sh");
+  const reactHook    = join(PROJECT_ROOT, "hooks", "claude-buddy", "react.sh");
+  const commentHook  = join(PROJECT_ROOT, "hooks", "claude-buddy", "buddy-comment.sh");
+  const nameHook     = join(PROJECT_ROOT, "hooks", "claude-buddy", "name-react.sh");
 
   if (!settings.hooks) settings.hooks = {};
 

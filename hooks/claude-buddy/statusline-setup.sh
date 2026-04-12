@@ -17,9 +17,9 @@ command -v jq >/dev/null 2>&1 || exit 0
 ENABLED=$(jq -r '.statusLineEnabled // false' "$CONFIG" 2>/dev/null)
 [ "$ENABLED" = "true" ] || exit 0
 
-# Resolve buddy-status.sh path relative to this hook
+# Resolve buddy-status.sh path relative to this hook (hooks/claude-buddy/ → plugin root)
 HOOK_DIR="$(cd "$(dirname "$0")" && pwd)"
-PLUGIN_ROOT="$(cd "$HOOK_DIR/.." && pwd)"
+PLUGIN_ROOT="$(cd "$HOOK_DIR/../.." && pwd)"
 STATUS_SCRIPT="$PLUGIN_ROOT/statusline/buddy-status.sh"
 
 [ -f "$STATUS_SCRIPT" ] || exit 0

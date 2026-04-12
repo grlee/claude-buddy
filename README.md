@@ -224,8 +224,11 @@ claude-buddy/
 ├── skills/buddy/
 │   └── SKILL.md          # /buddy slash command
 ├── hooks/
-│   ├── react.sh          # PostToolUse: error/test detection
-│   └── buddy-comment.sh  # Stop: comment extraction
+│   └── claude-buddy/
+│       ├── react.sh            # PostToolUse: error/test detection
+│       ├── buddy-comment.sh    # Stop: comment extraction
+│       ├── name-react.sh       # UserPromptSubmit: name detection
+│       └── statusline-setup.sh # SessionStart: status line opt-in
 ├── statusline/
 │   └── buddy-status.sh   # Animated right-aligned buddy display
 ├── cli/
