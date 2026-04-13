@@ -330,12 +330,14 @@ export interface StatusState {
   hat: string;
   reaction: string;
   muted: boolean;
+  achievement: string;
 }
 
 export function writeStatusState(
   companion: Companion,
   reaction?: string,
   muted?: boolean,
+  achievement?: string,
 ): void {
   mkdirSync(STATE_DIR, { recursive: true });
   const { renderFace, RARITY_STARS } =
@@ -351,6 +353,7 @@ export function writeStatusState(
     hat: companion.bones.hat,
     reaction: reaction ?? "",
     muted: muted ?? false,
+    achievement: achievement ?? "",
   };
   writeFileSync(join(STATE_DIR, "status.json"), JSON.stringify(state));
 }
