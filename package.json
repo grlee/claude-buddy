@@ -21,8 +21,8 @@
         "upgrade": "bun run cli/upgrade.ts",
         "uninstall": "bun run cli/uninstall.ts",
         "help": "bun run cli/index.ts help",
-        "buddy-shell": "npx tsx cli/buddy-shell.ts",
-        "tui": "bun run cli/tui.tsx",
+        "buddy-shell": "bun run cli/buddy-shell.ts",
+        "tui": "bun run cli/tui.ts",
         "test": "bun test",
         "typecheck": "tsc --noEmit"
     },
@@ -50,7 +50,9 @@
     "homepage": "https://github.com/1270011/claude-buddy#readme",
     "license": "MIT",
     "dependencies": {
-        "@modelcontextprotocol/sdk": "^1.12.1",
+        "@modelcontextprotocol/sdk": "^1.12.1"
+    },
+    "optionalDependencies": {
         "@xterm/addon-serialize": "^0.14.0",
         "@xterm/headless": "^6.0.0",
         "ink": "^7.0.0",

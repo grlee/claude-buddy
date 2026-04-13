@@ -11,7 +11,6 @@
  *   npx tsx cli/buddy-shell.ts bash     # runs bash
  */
 
-import { spawn as ptySpawn } from "node-pty";
 import { execSync } from "node:child_process";
 import { readFileSync, existsSync } from "node:fs";
 import { join, dirname } from "node:path";
@@ -22,10 +21,22 @@ const PROJECT_ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
 import { getArtFrame, HAT_ART } from "../server/art.ts";
 import type { Species, Eye, Hat } from "../server/engine.ts";
 import { getBiome, listBiomes } from "./biomes.ts";
-import xtermPkg from "@xterm/headless";
-import serializePkg from "@xterm/addon-serialize";
-const { Terminal } = xtermPkg as any;
-const { SerializeAddon } = serializePkg as any;
+
+// Optional native deps — loaded dynamically so install works without them.
+let ptySpawn: any, Terminal: any, SerializeAddon: any;
+try {
+  // @ts-ignore — optional dep, may be absent at typecheck time on Linux
+  ({ spawn: ptySpawn } = await import("node-pty"));
+  ({ Terminal } = (await import("@xterm/headless")).default as any);
+  ({ SerializeAddon } = (await import("@xterm/addon-serialize")).default as any);
+} catch (e: any) {
+  const missing = e?.message?.match(/["']([^"']+)["']/)?.[1] ?? "native deps";
+  console.error(`\nbuddy-shell needs optional native deps that aren't installed (${missing}).`);
+  console.error(`\nOn Linux, install build tools and re-run \`bun install\`:`);
+  console.error(`  sudo apt install -y python3 make g++ build-essential`);
+  console.error(`  cd ${PROJECT_ROOT} && bun install\n`);
+  process.exit(1);
+}
 
 if (!process.stdin.isTTY && !process.argv.includes("--biomes")) {
   console.error("buddy-shell requires an interactive terminal (TTY)");
@@ -777,7 +788,7 @@ const timer = setInterval(() => {
 }, 3000);
 
 // Cleanup: leave alt screen — original terminal content comes back
-pty.onExit(({ exitCode }) => {
+pty.onExit(({ exitCode }: { exitCode: number }) => {
   clearInterval(timer);
   process.stdout.write(`${CSI}r`);                   // reset scroll region
   process.stdout.write(`${CSI}?1002l${CSI}?1006l`);   // disable mouse tracking
