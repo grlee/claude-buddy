@@ -10,6 +10,7 @@ import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { z } from "zod";
 import { join, resolve, dirname } from "path";
+import pkg from "../package.json" with { type: "json" };
 
 import {
   generateBones,
@@ -85,7 +86,7 @@ function getInstructions(): string {
 const server = new McpServer(
   {
     name: "claude-buddy",
-    version: "0.3.0",
+    version: pkg.version,
   },
   {
     instructions: getInstructions(),
