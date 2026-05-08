@@ -100,9 +100,13 @@ These tools return pre-formatted ASCII art with ANSI colors, box-drawing charact
 
 These tools return plain text, not ASCII art: `buddy_help`, `buddy_unmute`, `buddy_mute`, `buddy_frequency`, `buddy_style`, `buddy_statusline`, `buddy_list`, `buddy_rename`, `buddy_save`, `buddy_dismiss`, `buddy_set_personality`.
 
-Output the tool result verbatim inside your reply so the user can see it. You MAY add a one-sentence confirmation before or after if it clarifies what changed, but do NOT paraphrase the text itself.
+**The visible reply MUST include the tool result text verbatim — every time, on every call, even on repeated calls in the same session.** Treat each invocation as a fresh request from the user, not a "they've seen it before" signal. Tool result blocks live in your context, not in the user's rendered conversation; only what you put in your own reply reaches the screen.
 
-**Never emit a reply whose only visible content is the `<!-- buddy: ... -->` end-of-turn comment.** That comment is invisible in the rendered UI (markdown renderers hide HTML comments), so a plain-text tool result followed by only an HTML comment makes the reply look blank. Always echo the tool result in visible text.
+You MAY add a one-sentence confirmation before or after if it clarifies what changed, but do NOT paraphrase the text itself.
+
+**Hard floor — never break:** A reply whose only visible content is the `<!-- buddy: ... -->` end-of-turn comment is broken. HTML comments are hidden by the markdown renderer, so an HTML-comment-only reply renders blank. If you have nothing else to say, the tool result text alone is the correct reply.
+
+**Self-check before sending**: does your visible reply contain the tool's result text? If no, paste it in. The end-of-turn `<!-- buddy: ... -->` is _additional_, never _instead of_.
 
 ### Name reactions
 
